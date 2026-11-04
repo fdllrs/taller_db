@@ -1,0 +1,58 @@
+{
+  "name": "system-definition",
+  "description": "Defining system based on SSOT",
+  "version": "0.3.0",
+  "license": "MIT",
+  "repository": "ari-dc-uba-ar/system-definition",
+  "main": "dist/src/common/index.js",
+  "types": "dist/src/common/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/common/index.d.ts",
+      "default": "./dist/src/common/index.js"
+    },
+    "./examples": {
+      "types": "./dist/examples/common/index.d.ts",
+      "default": "./dist/examples/common/index.js"
+    },
+    "./examples/behaviour": {
+      "types": "./dist/examples/common/aida-behaviour.d.ts",
+      "default": "./dist/examples/common/aida-behaviour.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/src",
+    "dist/examples"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "tsc && mocha --exit --node-option enable-source-maps --node-option harmony-temporal dist/test/",
+    "test-ci": "tsc && c8 mocha --node-option enable-source-maps --node-option harmony-temporal dist/test/"
+  },
+  "overrides": {
+    "diff": ">=8.0.2",
+    "serialize-javascript": ">=7.0.0",
+    "uuid": ">=14.0.0"
+  },
+  "devDependencies": {
+    "@toon-format/toon": "^4.1.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.6.2",
+    "best-globals": "^2.2.2",
+    "c8": "^12.0.0",
+    "like-ar": "^0.5.4",
+    "mocha": "^12.0.2",
+    "qa-control": "^0.11.3",
+    "typescript": "^7.0.2"
+  },
+  "qa-control": {
+    "gha": "all",
+    "run-in": "both",
+    "type": "lib",
+    "silenced": [
+      "first_lines_does_not_match_in_file_1"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "extends": "../src/backend/tsconfig.json",
+    "compilerOptions": {
+        "rootDir": "..",
+        "composite": false,
+        "incremental": false,
+        "noEmit": true,
+        "lib": ["es2024", "dom", "dom.iterable"]
+    },
+    "include": ["*.typecheck.ts"]
+}

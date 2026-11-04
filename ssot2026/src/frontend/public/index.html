@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión Académica · Planillas</title>
+    <link rel="stylesheet" href="/style.css">
+    <script type="module" src="/assets/main.js"></script>
+</head>
+<body>
+    <main>
+        <header class="page-header">
+            <button id="open-tables" type="button" aria-label="Abrir planillas" aria-controls="tables-panel" aria-expanded="false" hidden>☰</button>
+            <div class="user-nav">
+                <div id="session" class="session-info" hidden>
+                    <span class="user-badge"><strong id="session-user"></strong></span>
+                    <button id="manage-account" type="button">Mi cuenta</button>
+                    <button id="logout" type="button" class="danger">Cerrar sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <p id="status" role="status" aria-live="polite"></p>
+
+        <section id="authentication" aria-labelledby="authentication-title">
+            <h1 id="authentication-title">Iniciar sesión</h1>
+            <p id="auth-status" role="alert"></p>
+            <form id="identity-form">
+                <div class="field">
+                    <label for="login-user">Usuario</label>
+                    <input id="login-user" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+                </div>
+                <button type="submit" class="primary">Continuar</button>
+            </form>
+            <form id="login-form" hidden>
+                <p id="login-identity"></p>
+                <button id="change-identity" type="button">Cambiar usuario</button>
+                <input id="login-username" name="usuario" autocomplete="username" hidden>
+                <div class="field">
+                    <label for="login-password">Contraseña</label>
+                    <input id="login-password" name="contrasena" type="password" autocomplete="current-password" required>
+                </div>
+                <div class="actions">
+                    <button type="submit" class="primary">Ingresar</button>
+                    <button id="show-recovery" type="button">Recuperar contraseña</button>
+                </div>
+            </form>
+            <form id="recovery-form" hidden>
+                <p class="muted">Usá uno de los códigos que guardaste. Al recuperar tu cuenta se reemplazarán todos los códigos anteriores y se cerrarán tus sesiones.</p>
+                <div class="field">
+                    <label for="recover-user">Usuario</label>
+                    <input id="recover-user" name="usuario" autocomplete="username" required minlength="3" maxlength="64">
+                </div>
+                <div class="field">
+                    <label for="recover-code">Código de recuperación</label>
+                    <input id="recover-code" name="codigo" autocomplete="off" required maxlength="35" spellcheck="false">
+                </div>
+                <div class="field">
+                    <label for="recover-password">Nueva contraseña</label>
+                    <input id="recover-password" name="contrasena" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+                </div>
+                <div class="actions">
+                    <button type="submit" class="primary">Restablecer contraseña</button>
+                    <button id="show-login" type="button">Volver a ingresar</button>
+                </div>
+            </form>
+        </section>
+
+        <fieldset id="workspace" disabled hidden>
+            <dialog id="tables-panel" aria-labelledby="tables-title">
+                <div class="dialog-header">
+                    <h2 id="tables-title">Planillas</h2>
+                    <button id="close-tables" type="button" aria-label="Cerrar planillas">✕</button>
+                </div>
+                <input id="table-search" type="search" placeholder="Buscar planilla…" aria-label="Buscar planilla">
+                <nav id="table-list" aria-label="Planillas disponibles"></nav>
+            </dialog>
+            <section id="content" aria-label="Planilla activa"></section>
+        </fieldset>
+    </main>
+
+    <dialog id="account" aria-labelledby="account-dialog-title">
+        <div class="dialog-header">
+            <h2 id="account-dialog-title">Mi cuenta</h2>
+            <button id="close-account-dialog" type="button" class="close-btn" aria-label="Cerrar modal">✕</button>
+        </div>
+        <section id="account-management" hidden aria-label="Administración de cuenta">
+            <p class="muted">Generá códigos y guardalos en un lugar seguro para recuperar tu cuenta. Cada generación reemplaza los códigos anteriores.</p>
+            <p id="account-status" role="alert"></p>
+            <form id="account-form">
+                <div class="field">
+                    <label for="account-current">Contraseña actual</label>
+                    <input id="account-current" name="actual" type="password" autocomplete="current-password" required minlength="12" maxlength="128">
+                </div>
+                <div class="field">
+                    <label for="account-new">Nueva contraseña (opcional)</label>
+                    <input id="account-new" name="nueva" type="password" autocomplete="new-password" minlength="12" maxlength="128">
+                </div>
+                <p class="muted">Si indicás una nueva contraseña, se cerrarán tus sesiones y recibirás códigos nuevos.</p>
+                <div class="actions">
+                    <button type="submit" class="primary">Guardar y generar códigos</button>
+                    <button id="close-account" type="button">Cancelar</button>
+                </div>
+            </form>
+        </section>
+    </dialog>
+
+    <dialog id="recovery-codes" aria-labelledby="codes-title">
+        <h2 id="codes-title">Guardá tus códigos de recuperación</h2>
+        <p class="muted">Se muestran una sola vez. Guardalos fuera de la app. Al usar uno se reemplazará todo este conjunto.</p>
+        <pre id="codes"></pre>
+        <div class="actions">
+            <button id="download-codes" type="button">Descargar códigos</button>
+            <button id="saved-codes" type="button" class="primary">Ya los guardé</button>
+        </div>
+    </dialog>
+
+    <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+        <div class="confirm-content">
+            <div class="confirm-icon" aria-hidden="true">⚠️</div>
+            <div>
+                <h2 id="confirm-title">Confirmar acción</h2>
+                <p id="confirm-message"></p>
+            </div>
+        </div>
+        <div class="actions confirm-actions">
+            <button id="confirm-cancel" type="button">Cancelar</button>
+            <button id="confirm-ok" type="button" class="danger primary">Confirmar</button>
+        </div>
+    </dialog>
+
+    <dialog id="delete-dependencies-dialog" class="dependency-dialog" aria-labelledby="delete-dependencies-title">
+        <div class="dialog-header">
+            <h2 id="delete-dependencies-title">No se pueden borrar estas filas</h2>
+            <button id="close-delete-dependencies" type="button" class="close-btn" aria-label="Cerrar">✕</button>
+        </div>
+        <p>Estos registros seleccionados están siendo utilizados por otras filas:</p>
+        <ul id="delete-dependencies-list" class="dependency-list"></ul>
+    </dialog>
+</body>
+</html>

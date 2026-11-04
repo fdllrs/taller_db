@@ -19,28 +19,12 @@ El proyecto se rige por tres pilares fundamentales:
 - **Las descripciones NO llevan funciones**: Las definiciones (`TypeDef`, `RecordDef`, `EntityDef`) son valores puros, fuertemente tipados y **serializables a JSON plano**.
 - **El comportamiento reside en el contexto**: Las funciones operativas (`deserialize`, `serialize`, `check`, `parse`, `format`, completadores) viven en los contextos del sistema (`SystemTypeContext`, `SystemEntityContext`), nunca embebidas dentro de las estructuras de descripción.
 
-### 3. Convención Dual `XxxDef` vs `XxxInfo`
-- **`XxxDef` (Definition)**: Lo que escribe el desarrollador. Contiene exclusivamente el mínimo con significado semántico; cualquier atributo con un valor por defecto sensato se omite.
-- **`XxxInfo`**: Lo que produce el framework al completar la `Def` con sus valores por defecto. Es totalmente explícito, determinístico y serializable; es la estructura que consumen los generadores y herramientas.
-- **Autocontención**: La `Def` en mapas no repite su clave; la `Info` incluye su propio `name` para poder serializarse como array y reindexarse en cualquier plataforma sin depender del orden de claves en JSON.
-
-### 4. Metodología TDD y Rigor en Tipos
-- **TDD en pasos cortos (*baby steps*)**: Primero se escribe el test que falla o evidencia la necesidad; luego la implementación mínima.
-- **Tests de tipos bidireccionales**: Se valida la asignabilidad en ambos sentidos (que el tipo obtenido y el esperado sean mutuamente asignables).
-- **Criterio estricto de `@ts-expect-error`**:
-  - Prohibido en código productivo (`src` y `examples`).
-  - En tests se reserva para validar llamadas inválidas o literales rechazados. Una sola construcción por línea marcada para no tapar errores colaterales.
-  - Para relaciones de tipos estáticos se prefieren helpers (ej. `IsAssignable<A, B>`) antes que directivas que silencien el compilador.
 
 ### 5. Tipado Estricto de Punta a Punta (Cero `any`)
 - **Preservación estática/dinámica**: Del valor en runtime de una definición se deduce automáticamente el tipo TypeScript en compilación (`RecordInstanceType`, `EntityInstanceType`) sin duplicar definiciones de campos.
 - **Validación en tiempo de compilación**: Claves foráneas, claves primarias y campos inexistentes se controlan en el sistema de tipos.
 - **Sin parámetros de tipo con defaults silenciosos**: Todo requiere su contexto explícito; si no se especifica contra qué contexto se define una estructura, no compila.
 
-### 6. Pares de Conversión: Máquina vs. Humano
-- **Máquina (`deserialize` / `serialize`)**: Determinístico, estricto, unívoco e insensible a idioma/locale (para URLs, bases de datos, APIs y JSON).
-- **Humano (`parse` / `format`)**: Orientado a la interacción con personas; recibe el `locale` por parámetro (manejo de formatos de fecha, puntuación de miles/decimales).
-- **Conversión temprana**: La entrada externa se valida y convierte en el punto de ingreso; el resto del sistema opera únicamente con valores tipados de dominio.
 
 ### 7. Composición y No Repetición de Claves
 - **Redundancia lineal controlada**: Permitir el doble chequeo entre definición y fuente (1 a 1), pero evitar copias N-arias.
@@ -118,16 +102,7 @@ El proyecto se rige por tres pilares fundamentales:
 
 ### 3. Modificaciones a `ssot2026` bajo Enfoque Upstream / PR
 - Cualquier funcionalidad o mejora que se necesite incorporar en `ssot2026` para construir nuestra aplicación debe concebirse estrictamente como una **capacidad genérica de DBA**, tratándola conceptualmente como si fuera un Pull Request (PR) destinado al proyecto base general `ssot2026`.
-- **Aviso y acuerdo previo obligatorio**: Antes de realizar cualquier tipo de modificación o agregado dentro de `ssot2026`, es obligatorio **avisar y acordar previamente con el programador**.
+- **Aviso y acuerdo previo obligatorio**: Antes de realizar cualquier tipo de moificación o agregado dentro de `ssot2026`, es obligatorio **avisar y acordar previamente con el programador**.
 
----
 
-## Matriz Comparativa: `system-definition` vs. `ideas/` vs. `ssot2026`
 
-| Dimensión | Framework `system-definition` | Directorio `ideas/` (Codenautas / SSOTIGAD) | Framework `ssot2026` |
-| :--- | :--- | :--- | :--- |
-| **Foco principal** | **Vocabulario y tipado**: cómo describir entidades, tipos, registros y relaciones en TypeScript de forma serializable. | **Arquitectura y diseño**: cómo modelar el negocio, diseñar la BD, validar SQL y organizar el trabajo de ingeniería. | **Framework DBA**: motor de migraciones, evaluación de esquemas, CRUD de backoffice y UI de administración. |
-| **Nivel de abstracción** | Capa descriptiva formal (código TypeScript, inferencia de tipos, serialización pura). | Modelo relacional, base de datos relacional, interacción de usuario y metodología de equipo. | Infraestructura de persistencia PostgreSQL, servidor backend y cliente de administración. |
-| **Reglas sobre datos** | `XxxDef` vs `XxxInfo`, separación de descripción y contexto, tipado sin `any`. | Claves naturales compuestas, no usar autonuméricos, 3FN, verificación de dumps en migraciones. | Aislamiento de la lógica de negocio; exclusivo para tareas y componentes de DBA genéricos. |
-| **Operación sobre consultas** | Especificación de entidades, campos y tipos derivados. | Validación de AST de SQL (`validateSql`), joins garantizados por PK (`constructed-sql-validator`). | Generación de DDL, mapeos de tipos SQL y ejecución de transacciones seguras. |
-| **Forma de trabajo** | TDD guiado por asignabilidad de tipos y `@ts-expect-error` disciplinado. | Diffs chicos revisables, no fallar en silencio, `qa-control`, docs con `multilang`. | Modular, desacoplado; modificaciones requieren aviso previo y diseño como PR genérico. |

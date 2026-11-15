@@ -1,0 +1,73 @@
+import {strict as assert} from "node:assert";
+import {describe, it} from "mocha";
+import {appPermissionSql, provisionDatabase, verifyDatabasePermissions} from "../src/database-permissions";
+import type {StructureChangeInfo} from "../src/authoring-contract";
+import type {DatabaseSettings} from "../src/database-settings";
+import type {PgSession, PgSchemaInfo} from "../src/pg-schema";
+const settings: DatabaseSettings = {database: {database: "test", schema: "app"}, initialUser: {user: "admin"}, owner: {user: "owner", password: "fixture-owner"}, appUser: {user: "app", password: "fixture-app"}};
+describe("owner/app provisioning and permission verification", () => {
+    it("creates missing roles and schema with one administrative transaction and passwords supplied separately from the saved SQL", async () => {
+        const calls: string[] = [];
+        const session: PgSession = {async query(sql, params) {
+            calls.push(sql);
+            if (sql.startsWith("SELECT format")) return {rows: [{sql: 'CREATE ROLE "' + params[0] + '" LOGIN'}], rowCount: 1};
+            if (sql.includes("nspowner")) return {rows: [{owner: "owner"}], rowCount: 1};
+            return {rows: [], rowCount: 0};
+        }, async close() {}};
+        assert.equal((await provisionDatabase(session, settings)).ok, true);
+        assert.ok(calls.includes("BEGIN") && calls.includes("COMMIT"));
+        assert.ok(calls.some(sql => sql.includes('CREATE ROLE "owner"') && sql.includes('CREATE ROLE "app"')));
+        assert.ok(calls.every(sql => !sql.includes("fixture-owner") && !sql.includes("fixture-app")));
+        assert.ok(calls.some(sql => sql.includes('AUTHORIZATION "owner"')));
+        assert.ok(calls.some(sql => sql.includes('ALTER DEFAULT PRIVILEGES FOR ROLE "owner" IN SCHEMA "app" REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM "app"')));
+        assert.ok(calls.every(sql => !/ALTER DEFAULT PRIVILEGES[^;]+\bGRANT\b/.test(sql)));
+    });
+    it("grants CRUD only for added tables, including recreation, while preserving existing-table permissions", () => {
+        const table = (name: string) => ({schema: "app", kind: "table", name, parentName: null, signature: []}) as const;
+        const common = {id: "change", origin: "inferred", impact: "preserving", differences: [], affectedFields: [], dependsOn: []} as const;
+        const existing: StructureChangeInfo[] = [
+            {...common, action: "alter", before: table("items"), after: table("items")},
+            {...common, action: "rename", before: table("items"), after: table("renamed")},
+            {...common, action: "remove", before: table("removed"), after: null},
+            {...common, action: "add", before: null, after: {schema: "app", kind: "column", name: "notes", parentName: "items", signature: []}},
+        ];
+        assert.deepEqual(appPermissionSql(settings, existing), []);
+        assert.deepEqual(appPermissionSql(settings, []), []);
+        assert.deepEqual(appPermissionSql(settings, [...existing, {...common, action: "add", before: null, after: table("new_table")}]), [
+            'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "app"."new_table" TO "app";\n',
+        ]);
+        assert.deepEqual(appPermissionSql(settings, [
+            {...common, action: "remove", before: table("recreated"), after: null},
+            {...common, action: "add", before: null, after: table("recreated")},
+        ]), ['GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "app"."recreated" TO "app";\n']);
+        assert.deepEqual(appPermissionSql({...settings, appUser: {user: 'app"user'}}, [
+            {...common, action: "add", before: null, after: table('new"table')},
+        ]), ['GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "app"."new""table" TO "app""user";\n']);
+    });
+    it("blocks an administrative app role and rolls back a schema owned by another user", async () => {
+        const blocked: PgSession = {async query() {return {rows: [{rolname: "app", rolcanlogin: true, rolsuper: true}], rowCount: 1};}, async close() {}};
+        assert.equal((await provisionDatabase(blocked, settings)).ok, false);
+        const calls: string[] = [];
+        const wrong: PgSession = {async query(sql) {
+            calls.push(sql);
+            if (sql.startsWith("SELECT format")) return {rows: [{sql: "CREATE ROLE fixture"}], rowCount: 1};
+            if (sql.includes("nspowner")) return {rows: [{owner: "other"}], rowCount: 1};
+            return {rows: [], rowCount: 0};
+        }, async close() {}};
+        assert.equal((await provisionDatabase(wrong, settings)).ok, false);
+        assert.ok(calls.includes("ROLLBACK"));
+        assert.ok(!calls.includes("COMMIT"));
+    });
+    it("checks every managed table using the configured identities without changing permissions", async () => {
+        const expected: PgSchemaInfo = {formatVersion: 1, engineVersion: "18.6", schemas: ["app"], objects: [{kind: "table", identity: {schema: "app", kind: "table", name: "items", parentName: null, signature: []}, persistence: "permanent", relationKind: "r"}]};
+        let valid = true;
+        const session: PgSession = {async query(sql, params) {
+            assert.ok(sql.startsWith("SELECT"));
+            assert.deepEqual(params, ["owner", "app", "app", '["items"]']);
+            return {rows: [{ok: valid}], rowCount: 1};
+        }, async close() {}};
+        assert.equal((await verifyDatabasePermissions(session, settings, expected)).ok, true);
+        valid = false;
+        assert.equal((await verifyDatabasePermissions(session, settings, expected)).ok, false);
+    });
+});

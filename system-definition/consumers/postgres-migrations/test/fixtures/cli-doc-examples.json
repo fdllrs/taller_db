@@ -1,0 +1,98 @@
+[
+  {
+    "title": "Read applied and pending migrations",
+    "command": "status",
+    "args": [
+      "--ssot",
+      "system.js",
+      "--database",
+      "database.js"
+    ],
+    "result": {
+      "ok": true,
+      "value": null
+    },
+    "exitCode": 0
+  },
+  {
+    "title": "Unsupported database environment",
+    "command": "apply",
+    "args": [
+      "--ssot",
+      "system.js",
+      "--database",
+      "database.js"
+    ],
+    "result": {
+      "ok": false,
+      "problems": [
+        {
+          "field": null,
+          "messageKey": "migration.environmentMismatch",
+          "severity": "blocking",
+          "details": {}
+        }
+      ]
+    },
+    "exitCode": 2
+  },
+  {
+    "title": "Database drift blocks apply",
+    "command": "apply",
+    "args": [
+      "--ssot",
+      "system.js",
+      "--database",
+      "database.js"
+    ],
+    "result": {
+      "ok": false,
+      "problems": [
+        {
+          "field": null,
+          "messageKey": "migration.schemaDrift",
+          "severity": "blocking",
+          "details": {}
+        }
+      ]
+    },
+    "exitCode": 3
+  },
+  {
+    "title": "Uncertain commit remains blocked",
+    "command": "apply",
+    "args": [
+      "--ssot",
+      "system.js",
+      "--database",
+      "database.js"
+    ],
+    "result": {
+      "ok": false,
+      "problems": [
+        {
+          "field": null,
+          "messageKey": "migration.commitUnknown",
+          "severity": "blocking",
+          "details": {}
+        }
+      ]
+    },
+    "exitCode": 4
+  },
+  {
+    "title": "Collect draft-bound data decisions",
+    "command": "resolve",
+    "args": [
+      "--draft",
+      "draft.json",
+      "--answers",
+      "answers.json"
+    ],
+    "result": {
+      "ok": true,
+      "value": null
+    },
+    "exitCode": 0
+  }
+]

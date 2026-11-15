@@ -1,0 +1,25 @@
+import {build} from "esbuild";
+import {sha256Hex} from "./canonical-hash";
+import type {SystemSnapshotInfo} from "system-definition";
+import type {SnapshotSide} from "./migration-authoring";
+import type {ValidationArtifactInfo} from "./validation-artifact";
+
+/** Bundle the entry and its imports together so later source edits cannot alter historical checks. */
+export async function buildValidationArtifact(
+    entry: string | {contents: string; resolveDir: string}, side: SnapshotSide, snapshot: SystemSnapshotInfo, snapshotHash: string,
+): Promise<{info: ValidationArtifactInfo; bytes: Uint8Array}> {
+    const result = await build({...typeof entry === "string" ? {entryPoints: [entry]} : {stdin: {...entry, loader: "js" as const}},
+        bundle: true, write: false, platform: "node", format: "esm", target: "node24", packages: "bundle",
+        ...(typeof entry === "string" ? {} : {minify: true})});
+    if (result.outputFiles.length !== 1) throw new Error("Validation build must produce exactly one self-contained module");
+    const bytes = result.outputFiles[0]!.contents;
+    const contentHash = sha256Hex(bytes);
+    const info: ValidationArtifactInfo = {
+        formatVersion: 1, side, snapshotHash,
+        entry: {path: `validators/${contentHash}.mjs`, contentHash, byteLength: bytes.length},
+        runtime: {nodeVersion: process.version, abi: "migration-validation-1"},
+        domainContractHashes: Object.fromEntries(snapshot.typeNames.map(name => [name, contentHash])),
+        entityValidatorNames: Object.fromEntries(Object.entries(snapshot.entities).map(([name, entity]) => [name, entity.validators])),
+    };
+    return {info, bytes};
+}

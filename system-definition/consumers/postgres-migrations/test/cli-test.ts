@@ -1,0 +1,93 @@
+import {strict as assert} from "node:assert";
+import {spawnSync} from "node:child_process";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import {describe, it} from "mocha";
+import {problem, type ValidationResult} from "system-definition";
+import {
+    cliExitCode,
+    runCliCommand,
+    type CliCommand,
+    type CliCommandExecutor,
+} from "../src/cli";
+
+function failed(messageKey: string): ValidationResult<unknown> {
+    return {
+        ok: false,
+        problems: [problem(null, messageKey, "blocking")],
+    };
+}
+
+describe("migration CLI boundary", () => {
+    it("requires the app's SSOT module for loading and assessment", () => {
+        for (const command of ["capture", "assess"]) {
+            const result = spawnSync(process.execPath, [resolve(__dirname, "../src/cli-main.js"), command], {encoding: "utf8"});
+            assert.equal(result.status, 2);
+            assert.match(result.stdout, /Supply --ssot/);
+        }
+    });
+
+    it("rejects missing required command inputs before loading modules", function () {
+        this.timeout(10_000);
+        for (const [command, options, missing] of [
+            ["infer", ["--ssot", "missing.js", "--database", "missing.js"], "id"],
+            ["data", ["--ssot", "missing.js", "--database", "missing.js", "--id", "d", "--sql", "s.sql"], "contract"],
+            ["resolve", ["--draft", "draft.json"], "answers"],
+        ] as const) {
+            const result = spawnSync(process.execPath, [resolve(__dirname, "../src/cli-main.js"), command, ...options], {encoding: "utf8"});
+            assert.equal(result.status, 2);
+            assert.ok(result.stdout.includes("Supply --" + missing));
+        }
+    });
+
+    it("ships a runnable postgres-migrations command with offline help", () => {
+        const root = resolve(__dirname, "../..");
+        const manifest: {bin?: Record<string, string>} = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+        const entry = manifest.bin?.["postgres-migrations"];
+        assert.equal(typeof entry, "string", "the documented CLI must be registered in package.json");
+        if (entry === undefined) return;
+        const help = spawnSync(process.execPath, [resolve(root, entry), "--help"], {
+            encoding: "utf8",
+            timeout: 10_000,
+            env: {...process.env, CI: "true", DATABASE_URL: ""},
+        });
+        assert.equal(help.error, undefined);
+        assert.equal(help.status, 0, help.stderr);
+        for (const command of ["infer", "data", "resolve", "status", "apply"]) {
+            assert.ok(help.stdout.includes(command), `help must document ${command}`);
+        }
+    });
+
+    it("maps complete success and the documented technical failure classes to 0/2/3/4", () => {
+        assert.equal(cliExitCode({ok: true, value: {id: "ok"}}), 0);
+        assert.equal(cliExitCode(failed("migration.invalidReference")), 2);
+        assert.equal(cliExitCode(failed("migration.environmentMismatch")), 2);
+        assert.equal(cliExitCode(failed("migration.schemaDrift")), 3);
+        assert.equal(cliExitCode(failed("migration.unknownCommitOutcome")), 4);
+    });
+
+    it("delegates a command exactly once and returns the same library result", async () => {
+        const calls: {command: CliCommand; args: readonly string[]}[] = [];
+        const libraryResult = failed("migration.checkFailed");
+        const execute: CliCommandExecutor = async (
+            command: CliCommand,
+            args: readonly string[],
+        ) => {
+            calls.push({command, args});
+            return libraryResult;
+        };
+
+        const execution = await runCliCommand(
+            "apply",
+            ["--directory", "migrations"],
+            execute,
+        );
+
+        assert.deepEqual(calls, [{
+            command: "apply",
+            args: ["--directory", "migrations"],
+        }]);
+        assert.equal(execution.result, libraryResult);
+        assert.equal(execution.exitCode, 3);
+    });
+});

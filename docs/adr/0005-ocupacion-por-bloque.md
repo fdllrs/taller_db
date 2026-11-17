@@ -1,0 +1,3 @@
+# La ocupación de una Cancha se guarda como una fila por Bloque
+
+Para impedir que dos Reservas se solapen, cada Bloque ocupado es una fila cuya clave primaria es la Cancha, la fecha y la hora del Bloque. Una Reserva de 90 minutos son tres filas, creadas en una misma transacción. La alternativa era una fila por Reserva con una restricción `EXCLUDE`, pero esa restricción solo entra con SQL manual, necesita `btree_gist` y queda fuera del SSOT: si se pierde, el control de drift no avisa. Lo que la base no impone (que los Bloques sean dos o más y consecutivos) lo controlan el Procedimiento de reservar y sus tests.

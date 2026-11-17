@@ -29,12 +29,16 @@ Persona que busca disponibilidad, reserva canchas, crea partidas o se une a part
 _Avoid_: Cliente, deportista, participante
 
 **Bloque**:
-Unidad mínima de tiempo de una Cancha: 30 minutos.
+Unidad mínima de tiempo de una Cancha: 30 minutos que empiezan en punto o y media.
 _Avoid_: Slot, franja
 
+**Horario**:
+Apertura y cierre de un Club para cada día de la semana, dentro de un mismo día calendario.
+_Avoid_: Horario de atención, franja horaria
+
 **Reserva**:
-Ocupación de una Cancha durante dos o más Bloques consecutivos.
-_Avoid_: Booking, alquiler
+Ocupación de una Cancha durante dos o más Bloques consecutivos, dentro del Horario de su Club.
+_Avoid_: Turno, booking, alquiler
 
 **Partida**:
 Encuentro de pádel que un Jugador crea sobre una Reserva y al que otros Jugadores pueden unirse.

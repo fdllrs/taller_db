@@ -41,7 +41,7 @@ Ocupación de una Cancha durante dos o más Bloques consecutivos, dentro del Hor
 _Avoid_: Turno, booking, alquiler
 
 **Partida**:
-Encuentro de pádel que un Jugador crea sobre una Reserva y al que otros Jugadores pueden unirse.
+Encuentro de pádel de cuatro Jugadores que el titular de una Reserva abre para que otros Jugadores se unan.
 _Avoid_: Partido, match, juego
 
 **Procedimiento**:

@@ -1,0 +1,14 @@
+{
+  "name": "prototype-recorrido-jugadores",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "PROTOTIPO descartable: recorrido del Front de Jugadores",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node serve.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

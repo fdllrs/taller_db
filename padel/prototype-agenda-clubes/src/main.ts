@@ -2,12 +2,14 @@
 import { mount as mountA } from "./variantA.js";
 import { mount as mountB } from "./variantB.js";
 import { mount as mountC } from "./variantC.js";
+import { mount as mountD } from "./variantD.js";
 import { getReservas, subscribe } from "./store.js";
 
 const VARIANTS = [
   { key: "A", name: "Calendario claro", css: "styles/a.css", mount: mountA },
   { key: "B", name: "Tablero denso", css: "styles/b.css", mount: mountB },
   { key: "C", name: "Deportivo", css: "styles/c.css", mount: mountC },
+  { key: "D", name: "Deportivo simple", css: "styles/d.css", mount: mountD },
 ];
 
 const app = document.getElementById("app")!;

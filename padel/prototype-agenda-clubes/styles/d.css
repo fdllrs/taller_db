@@ -1,0 +1,36 @@
+/* Variante D — Deportivo simple: paleta de C, menos ruido */
+body[data-variant="d"] { background: #f4f7fc; color: #0c1b3a; font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: 17px; }
+.d-app { max-width: 1100px; margin: 0 auto; padding: 0 16px 100px; touch-action: pan-y; }
+.d-head { display: flex; align-items: baseline; gap: 14px; padding: 16px 0 12px; flex-wrap: wrap; }
+.d-head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: #1646c8; }
+.d-head span { color: #5c6e91; }
+.d-hint { margin-left: auto; font-size: 15px; }
+.d-hint em { font-style: normal; color: #c1121f; font-weight: 800; }
+
+.d-heads, .d-body { display: grid; grid-template-columns: 56px repeat(4, 1fr); gap: 0 8px; }
+.d-heads { position: sticky; top: 0; z-index: 4; background: #f4f7fc; }
+.d-heads div { padding: 10px 0; text-align: center; font-weight: 800; font-size: 20px; }
+.d-t { height: 40px; box-sizing: border-box; font-size: 14px; color: #8493b0; text-align: right; padding-right: 6px; }
+.d-col { position: relative; background: #fff; border-radius: 14px; user-select: none; -webkit-user-select: none; }
+.d-slot { height: 40px; box-sizing: border-box; border-top: 1px solid #eef2f9; cursor: crosshair; touch-action: none; }
+.d-slot.hr { border-top-color: #dfe6f3; }
+.d-slot:first-child { border-top: 0; }
+.d-slot:hover { background: #eefad0; }
+.d-slot.sel { background: #c8f23a; }
+
+.d-res { position: absolute; left: 4px; right: 4px; box-sizing: border-box; background: #1646c8; color: #fff; border-radius: 12px; padding: 7px 12px; cursor: pointer; display: flex; flex-direction: column; overflow: hidden; }
+.d-res b { font-size: 19px; font-weight: 800; line-height: 1.1; }
+.d-res span { font-size: 14px; opacity: .85; }
+.d-res.on { outline: 3px solid #c8f23a; }
+.d-draft { position: absolute; left: 4px; right: 4px; box-sizing: border-box; background: #c8f23a; border: 2px dashed #0c1b3a; border-radius: 12px; z-index: 1; pointer-events: none; }
+
+.d-pop { position: absolute; left: 6px; right: 6px; z-index: 5; box-sizing: border-box; background: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 8px 30px rgba(12,27,58,.25); display: flex; flex-direction: column; gap: 10px; min-width: 210px; }
+.d-pop b { font-size: 19px; }
+.d-pop span { color: #5c6e91; }
+.d-pop input { height: 52px; box-sizing: border-box; border: 2px solid #0c1b3a; border-radius: 12px; padding: 0 12px; font: 500 19px "Bricolage Grotesque", sans-serif; width: 100%; }
+.d-err { margin: 0; color: #c1121f; font-weight: 800; font-size: 15px; }
+.d-row { display: flex; gap: 8px; }
+.d-btn { flex: 1; min-height: 52px; border: 0; border-radius: 12px; font: 800 17px "Bricolage Grotesque", sans-serif; cursor: pointer; padding: 0 8px; }
+.d-go { background: #c8f23a; color: #0c1b3a; }
+.d-sec { background: #eaf0fb; color: #0c1b3a; }
+.d-red { background: #e5383b; color: #fff; }

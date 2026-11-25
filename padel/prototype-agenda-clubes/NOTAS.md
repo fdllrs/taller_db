@@ -9,9 +9,14 @@ Correr: `npm install && npm start` y abrir `http://localhost:5173/?variant=A` (o
 | A, Calendario claro (drag + popover) | 120 | 41 |
 | B, Tablero denso (clic-clic + panel lateral) | 134 | 34 |
 | C, Deportivo (modal) | 117 | 56 |
+| D, Deportivo simple (drag + popover, paleta de C) | 120 | 36 |
 | Compartido: `store.ts` 59, `main.ts` (switcher + debug) 61 | 120 | 14 |
 
 Nota: no se probó en un navegador real (solo compila, sirve y se probó el store con node). Las observaciones sobre el DOM salen de escribir el código, no de usarlo.
+
+## Variante D (agregada después)
+
+D = paleta/tipografía de C + creación por arrastre de A + popover mínimo. El drag con plain TS no sumó dolor nuevo respecto de A: se copió el patrón (`paintDrag` por clases durante el arrastre, `render()` al soltar). Lo único extra fue usar `pointer*` en vez de `mouse*` para que sirva en touch: hay que poner `touch-action: none` en los Bloques y buscar el Bloque bajo el dedo con `elementFromPoint`, porque el puntero queda capturado por el primer elemento. El drag en sí no se probó con un navegador real (solo la captura estática).
 
 ## Qué fue fácil
 

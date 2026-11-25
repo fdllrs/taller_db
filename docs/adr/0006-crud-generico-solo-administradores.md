@@ -1,0 +1,3 @@
+# El CRUD genérico es solo para Administradores
+
+Al trazar el mapa, el Front de Clubes iba a usar el CRUD genérico de `ssot2026` filtrado por su Club. Pero `ssot2026` no tiene roles y cada ruta del CRUD arma su propio SQL. Filtrar por fila habría implicado tocar siete caminos y describir en el SSOT qué tabla lleva a qué Club, y alcanzaba con olvidar un camino para mostrar datos de otro Club. Decidimos que el CRUD genérico responda 403 a quien no esté en `administradores`, y que los Fronts de Clubes y de Jugadores usen solo Procedimientos que verifican el rol y el Club en su propio SQL. El precio es escribir Procedimientos para administrar Canchas y Horarios.

@@ -3,12 +3,13 @@ import * as S from "./store.js";
 import { esc } from "./store.js";
 
 interface Sheet { club: string; cancha: string; fecha: string; hora: string; bloques: number; paso: "confirmar" | "hecha" | "partida"; err: string }
-const ui = { tab: "buscar", loc: 0, dia: 0, hora: "", bloques: 2, clubSel: "", clubDia: 0, pDia: -1, confirmando: "", dbg: false, sheet: null as Sheet | null };
+const ui = { tab: "buscar", loc: 0, dia: 0, bloques: 2, w: { paso: 1, loc: false, dia: false, fr: -1 }, clubSel: "", clubDia: 0, pDia: -1, confirmando: "", dbg: false, sheet: null as Sheet | null };
 const errs: Record<string, string> = {}; // error inline por clave de Reserva/Partida
 let reset = false; // true = volver arriba al re-renderizar
 const $app = document.getElementById("app")!;
 
 const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const FRANJAS: [string, number, number][] = [["Cualquier hora", 0, 24], ["Mañana (08–12)", 8, 12], ["Tarde (12–18)", 12, 18], ["Noche (18–24)", 18, 24]]; // franja = filtro del cliente sobre las horas devueltas
 const DURS: [number, string][] = [[2, "1 h"], [3, "1 h 30"], [4, "2 h"]];
 const fechaDe = (n: number) => S.sumarDias(S.AHORA.fecha, n);
 const diaTxt = (f: string) => { const d = new Date(f + "T00:00:00Z"); return DIAS[d.getUTCDay()] + " " + d.getUTCDate(); };
@@ -37,18 +38,29 @@ function horarioTxt(c: S.Club): string {
 }
 
 // ---------- pantallas ----------
+const tile = (act: string, v: string | number, label: string, on: boolean, big = false) => `<button class="tile${on ? " on" : ""}${big ? " big" : ""}" data-act="${act}" data-v="${v}">${esc(label)}</button>`;
 function buscar(): string {
-  const f = fechaDe(ui.dia);
-  const res = S.buscar_horarios(loc().provincia, loc().localidad, f, ui.hora || undefined, ui.bloques);
-  const horas = Array.from({ length: 16 }, (_, i) => S.toHora((8 + i) * 60));
-  const clubes = [...new Set(res.map((r) => r.club.codigo))];
-  return `<h1>Buscar Cancha</h1>${locSelect()}
-    <h4>Fecha</h4>${diaChips("dia", ui.dia)}
-    <h4>Horario</h4><select data-act="hora"><option value="">Cualquiera</option>${horas.map((h) => `<option value="${h}"${h === ui.hora ? " selected" : ""}>Alrededor de las ${h}</option>`).join("")}</select>
-    <h4>Duración</h4>${durChips()}
-    <h4>Horarios libres</h4>
-    ${clubes.map((c) => `<section class="card"><h3>${esc(S.nombreClub(c))}</h3>${res.filter((r) => r.club.codigo === c).map((r) =>
-      `<div class="cancha"><b>${esc(r.cancha)}</b><div class="times">${r.horas.map((h) => slot(c, r.cancha, f, h)).join("")}</div></div>`).join("")}</section>`).join("") || `<p class="muted">No hay Horarios libres para esa búsqueda. Probá otro día u otro Horario.</p>`}`;
+  const w = ui.w, f = fechaDe(ui.dia);
+  const pill = (n: number, label: string, ok: boolean) => `<button class="pill${ok ? "" : " dim"}${w.paso === n ? " cur" : ""}" data-act="w-paso" data-v="${n}">${esc(label)}</button>`;
+  const franja = w.fr >= 0 ? FRANJAS[w.fr][0].split(" (")[0] + " · " + DURS.find((d) => d[0] === ui.bloques)![1] : "Hora";
+  const tira = `<div class="hs strip">${pill(1, w.loc ? loc().localidad : "Lugar", w.loc)}${pill(2, w.dia ? diaLabel(ui.dia) : "Día", w.dia)}${pill(3, franja, w.fr >= 0)}</div>
+    <div class="stepbar">${w.paso > 1 ? `<button class="back" data-act="w-atras">‹ Atrás</button>` : "<span></span>"}<span class="muted">Paso ${w.paso} de 4</span></div>`;
+  let cuerpo: string;
+  if (w.paso === 1) cuerpo = `<h1>¿Dónde jugás?</h1>${S.LOCALIDADES.map((l, i) => tile("w-loc", i, l.localidad + ", " + l.provincia, w.loc && ui.loc === i, true)).join("")}`;
+  else if (w.paso === 2) cuerpo = `<h1>¿Qué día?</h1><div class="grid">${Array.from({ length: 15 }, (_, n) => tile("w-dia", n, diaLabel(n), w.dia && ui.dia === n)).join("")}</div>`;
+  else if (w.paso === 3) cuerpo = `<h1>¿A qué hora?</h1><div class="grid g2">${FRANJAS.map(([l], i) => tile("w-hora", i, l, w.fr === i)).join("")}</div>
+    <h4>Duración</h4><div class="seg">${DURS.map(([b, l]) => chip("dur", b, l, ui.bloques === b)).join("")}</div>
+    <button class="btn go full" data-act="w-ver"${w.fr < 0 ? " disabled" : ""}>Ver horarios libres</button>`;
+  else {
+    const [, a, b] = FRANJAS[w.fr];
+    const res = S.buscar_horarios(loc().provincia, loc().localidad, f, undefined, ui.bloques)
+      .map((r) => ({ ...r, horas: r.horas.filter((h) => +h.slice(0, 2) >= a && +h.slice(0, 2) < b) })).filter((r) => r.horas.length);
+    const clubes = [...new Set(res.map((r) => r.club.codigo))];
+    cuerpo = `<h1>Horarios libres</h1>` + (clubes.map((c) => `<section class="card"><h3>${esc(S.nombreClub(c))}</h3>${res.filter((r) => r.club.codigo === c).map((r) =>
+      `<div class="cancha"><b>${esc(r.cancha)}</b><div class="times">${r.horas.map((h) => slot(c, r.cancha, f, h)).join("")}</div></div>`).join("")}</section>`).join("")
+      || `<p class="muted">No hay Horarios libres para esa búsqueda.</p><button class="btn go full" data-act="w-paso" data-v="2">Cambiar día u hora</button>`);
+  }
+  return `${tira}<div data-paso="${w.paso}">${cuerpo}</div>`;
 }
 
 function clubes(): string {
@@ -110,8 +122,8 @@ function render(): void {
   const top = $app.querySelector(".scroll")?.scrollTop ?? 0, lefts = [...$app.querySelectorAll(".hs")].map((e) => e.scrollLeft);
   const pantalla = { buscar, clubes, partidas, reservas }[ui.tab as "buscar"]();
   const TABS = [["buscar", "Buscar"], ["clubes", "Clubes"], ["partidas", "Partidas"], ["reservas", "Mis reservas"]];
-  $app.innerHTML = `<div class="wrap"><div class="phone"><div class="scroll">${pantalla}</div>
-    <nav class="tabs">${TABS.map(([id, l]) => `<button class="${ui.tab === id ? "on" : ""}" data-act="tab" data-v="${id}">${l}</button>`).join("")}</nav>${sheet()}</div>${chrome()}</div>`;
+  $app.innerHTML = `<div class="app"><div class="scroll"><div class="page">${pantalla}</div></div>
+    <nav class="tabs"><b class="brand">Pádel</b>${TABS.map(([id, l]) => `<button class="${ui.tab === id ? "on" : ""}" data-act="tab" data-v="${id}">${l}</button>`).join("")}</nav>${sheet()}</div>${chrome()}`;
   const sc = $app.querySelector(".scroll")!, hs = [...$app.querySelectorAll(".hs")];
   if (!reset) { sc.scrollTop = top; if (hs.length === lefts.length) hs.forEach((e, i) => (e.scrollLeft = lefts[i])); }
   reset = false;
@@ -122,7 +134,13 @@ const ACT: Record<string, (v: string, el: HTMLElement) => void> = {
   tab: (v) => { ui.tab = v; reset = true; for (const k in errs) delete errs[k]; },
   user: (v) => S.setUsuario(v),
   loc: (v) => { ui.loc = +v; ui.clubSel = ""; reset = true; },
-  dia: (v) => (ui.dia = +v), hora: (v) => (ui.hora = v), dur: (v) => (ui.bloques = +v), cdia: (v) => (ui.clubDia = +v), pdia: (v) => (ui.pDia = +v),
+  "w-loc": (v) => { ui.loc = +v; ui.w.loc = true; ui.w.paso = 2; reset = true; },
+  "w-dia": (v) => { ui.dia = +v; ui.w.dia = true; ui.w.paso = 3; reset = true; },
+  "w-hora": (v) => { ui.w.fr = +v; },
+  "w-ver": () => { if (ui.w.fr >= 0) { ui.w.paso = 4; reset = true; } },
+  "w-atras": () => { ui.w.paso--; reset = true; },
+  "w-paso": (v) => { const w = ui.w; w.paso = +v === 4 && !(w.loc && w.dia && w.fr >= 0) ? (!w.loc ? 1 : !w.dia ? 2 : 3) : +v; reset = true; },
+  dur: (v) => (ui.bloques = +v), cdia: (v) => (ui.clubDia = +v), pdia: (v) => (ui.pDia = +v),
   club: (v) => { ui.clubSel = v; ui.clubDia = 0; reset = true; },
   atras: () => { ui.clubSel = ""; reset = true; },
   slot: (_, el) => { const d = el.dataset; ui.sheet = { club: d.club!, cancha: d.cancha!, fecha: d.fecha!, hora: d.hora!, bloques: ui.bloques, paso: "confirmar", err: "" }; },

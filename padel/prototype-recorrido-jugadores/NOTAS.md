@@ -7,13 +7,13 @@ PROTOTIPO descartable — ticket "Recorrido del Front de Jugadores" (fdllrs/tall
 ```
 cd padel/prototype-recorrido-jugadores && npm install && npm start
 ```
-Abrir http://localhost:5174/. En desktop se ve dentro de un marco de celular; a la derecha (o arriba a la derecha en pantallas angostas) está el selector "Jugando como" y el "Estado (debug)". "Ahora" está fijo: miércoles 2026-11-25 10:00.
+Abrir http://localhost:5174/. Es responsive (corte en 768 px: abajo barra de tabs inferior, arriba barra superior). Arriba a la derecha en el celular (abajo a la derecha en desktop) está el selector "Jugando como" y el "Estado (debug)". "Ahora" está fijo: miércoles 2026-11-25 10:00.
 
 ## Recorrido para probar
 
-1. Como Martina Ibarra, tab **Buscar**: Palermo, CABA, elegí un día, un Horario ("Alrededor de las 20:00") y una duración.
-2. Tocá un Horario libre: se abre la hoja con Club, Cancha, fecha, inicio–fin y duración.
-3. **Reservar** (probá también tocar un Horario que ya empezó o uno ocupado desde otra cuenta para ver los errores en rojo).
+1. Como Martina Ibarra, tab **Buscar** (wizard): Paso 1 elegí Palermo, CABA; Paso 2 un día; Paso 3 una franja (Mañana/Tarde/Noche/Cualquier hora) y duración, y **Ver horarios libres**. Las pastillas de arriba vuelven a cada paso.
+2. Paso 4: tocá un Horario libre: se abre la hoja con Club, Cancha, fecha, inicio–fin y duración.
+3. **Reservar** (probá también tocar un Horario ocupado desde otra cuenta para ver los errores en rojo).
 4. En "Reserva confirmada": **Abrir Partida** (o **Listo**, y abrirla después desde **Mis reservas**).
 5. Cambiá a Joaquín Sosa o Lucía Ferreyra en el selector (se queda en la tab actual). En **Partidas** buscá la Partida de Martina y tocá **Unirme**. Probá **Salir**, y mirá que el creador solo ve "Sos el creador".
 6. Volvé a Martina: en **Mis reservas** aparece "Partida 2/4" y **Cancelar Reserva** (con confirmación) borra la Partida.
@@ -22,12 +22,20 @@ Abrir http://localhost:5174/. En desktop se ve dentro de un marco de celular; a 
 ## Líneas de TS
 
 - `src/store.ts`: 149 (datos semilla + un stub por Procedimiento)
-- `src/main.ts`: 149 (pantallas, hoja de reserva, chrome, acciones)
-- Total: 298. Más `styles/app.css` (53).
+- `src/main.ts`: 167 (pantallas, wizard de Buscar, hoja de reserva, chrome, acciones)
+- Total: 316. Más `styles/app.css` (73).
 
 ## Cómo se mapeó `hora` en `buscar_horarios`
 
-El Horario de la pantalla es un select "Alrededor de las HH:00" (8 a 23); `hora` es un "HH:MM" y se devuelven solo los inicios a ±1 h de esa hora. Sin `hora`, todos los inicios libres del día. La búsqueda es en vivo (no hay botón "Buscar").
+El paso 3 ofrece franjas (Cualquier hora, Mañana 08–12, Tarde 12–18, Noche 18–24). **No se usa `hora`**: se llama a `buscar_horarios` sin `hora` y el front filtra los inicios devueltos por franja. Motivo: `hora` (±1 h) no expresa un rango; conviene un parámetro de franja (o `hora_desde`/`hora_hasta`) en el back.
+
+## Iteración 2 (feedback del usuario)
+
+"La página de Buscar no me gusta. Hacelo más paso a paso. Hacelo responsive."
+- Buscar pasó de un formulario largo a un wizard de 4 pasos (Dónde / Día / Hora + duración / Horarios libres), con pastillas-resumen tocables, "‹ Atrás" y "Paso N de 4". El estado vive en `ui.w` y sobrevive al cambio de tab o de cuenta.
+- Acciones nuevas: `w-loc`, `w-dia`, `w-hora`, `w-ver`, `w-paso`, `w-atras` (valor en `data-v`); el contenedor lleva `data-paso`. Tras reservar + "Listo" se queda en el paso 4 refrescado.
+- Se quitó el marco de celular: mobile (< 768 px) a pantalla completa con tabs abajo y hoja desde abajo; desktop (>= 768 px) con barra superior "Pádel", contenido de 720 px máx. y hoja como modal centrado.
+- El selector "Jugando como" es una píldora fija; el debug solo se ve en desktop.
 
 ## Lo que pidió la pantalla y no está en los Procedimientos
 

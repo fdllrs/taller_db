@@ -3,8 +3,8 @@ import * as S from "./store.js";
 import { esc } from "./store.js";
 
 interface Sheet { club: string; cancha: string; fecha: string; hora: string; bloques: number; paso: "confirmar" | "hecha" | "partida"; err: string }
-// fr = clave de franja ("" | manana | tarde | noche); busca = panel de búsqueda abierto; tocado = ya eligió algo (para el subtítulo del botón)
-const ui = { tab: "partidas", loc: 0, dia: 0, fr: "", bloques: 2, busca: false, tocado: false, clubSel: "", clubDia: 0, pDia: -1, confirmando: "", dbg: false, sheet: null as Sheet | null, anim: "" };
+// fr = clave de franja ("" | manana | tarde | noche); busca = panel abierto; paso = paso 1..3 de la búsqueda (hora = elegida en el 2); tocado = ya eligió algo (para el subtítulo del botón)
+const ui = { tab: "partidas", loc: 0, dia: 0, fr: "", bloques: 2, busca: false, tocado: false, paso: 1, hora: "", clubSel: "", clubDia: 0, pDia: -1, confirmando: "", dbg: false, sheet: null as Sheet | null, anim: "" };
 const errs: Record<string, string> = {}; // error inline por clave de Reserva/Partida
 let reset = false; // true = volver arriba al re-renderizar
 const $app = document.getElementById("app")!;
@@ -32,8 +32,11 @@ const diaTiles = (act: string, sel: number, todas = false) =>
     `<button class="cal${sel === n ? " on" : ""}" data-act="${act}" data-v="${n}">${calParts(fechaDe(n))}${n === 0 ? `<em>HOY</em>` : ""}</button>`).join("")}</div>`;
 const tag = (f: string) => (desde(f) === 0 ? `<span class="tag">Hoy</span>` : desde(f) === 1 ? `<span class="tag">Mañana</span>` : "");
 const durChips = () => `<div class="seg">${DURS.map(([b, l]) => chip("dur", b, l, ui.bloques === b)).join("")}</div>`;
-const locSelect = () => `<select data-act="loc">${S.LOCALIDADES.map((l, i) => `<option value="${i}"${i === ui.loc ? " selected" : ""}>${esc(l.localidad + ", " + l.provincia)}</option>`).join("")}</select>`;
-const slot = (club: string, cancha: string, fecha: string, hora: string) => `<button class="slot" data-act="slot" data-club="${esc(club)}" data-cancha="${esc(cancha)}" data-fecha="${fecha}" data-hora="${hora}">${hora}</button>`;
+const locSelect = (act = "loc") => `<select data-act="${act}">${S.LOCALIDADES.map((l, i) => `<option value="${i}"${i === ui.loc ? " selected" : ""}>${esc(l.localidad + ", " + l.provincia)}</option>`).join("")}</select>`;
+const slot = (club: string, cancha: string | null, fecha: string, hora: string) => `<button class="slot" data-act="slot" data-club="${esc(club)}"${cancha ? ` data-cancha="${esc(cancha)}"` : ""} data-fecha="${fecha}" data-hora="${hora}">${hora}</button>`;
+// Canchas del Club libres a esa hora para esa duración (la búsqueda ya las agrupa por Cancha)
+const libresEn = (club: string, fecha: string, hora: string, b: number) =>
+  S.buscar_horarios(loc().provincia, loc().localidad, fecha, undefined, b).filter((r) => r.club.codigo === club && r.horas.includes(hora)).map((r) => r.cancha);
 const err = (k: string) => (errs[k] ? `<p class="err">${esc(errs[k])}</p>` : "");
 const circulos = (js: string[]) => `<div class="lugares">${[0, 1, 2, 3].map((i) => (js[i] ? `<span class="lug on" title="${esc(js[i])}">${esc(ini(js[i]))}</span>` : `<span class="lug"></span>`)).join("")}<b>${js.length}/4</b></div>`;
 // cabecera de card: tile de fecha a la izquierda, Club / Cancha / hora a la derecha
@@ -56,21 +59,61 @@ function cta(): string {
   return `<button class="cta" data-act="buscar-abrir">${LUPA}<span><b>Reservar una Cancha</b><small>${esc(sub)}</small></span><svg class="arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>`;
 }
 
+const TITULOS = ["¿Qué día?", "¿A qué hora?", "¿Dónde?"];
+const CHEV = `<svg class="chev" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>`;
+const ICONOS: Record<string, string> = {
+  "": `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`, manana: `<path d="M5 17a7 7 0 0114 0M3 17h18M12 4v3M5 8l2 2M19 8l-2 2"/>`,
+  tarde: `<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>`, noche: `<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>`,
+};
+// filtra por franja en el cliente (ver nota de `hora` en NOTAS.md)
+function buscar() {
+  const [, , a, b] = FRANJAS.find((x) => x[0] === ui.fr)!;
+  return S.buscar_horarios(loc().provincia, loc().localidad, fechaDe(ui.dia), undefined, ui.bloques)
+    .map((r) => ({ ...r, horas: r.horas.filter((h) => +h.slice(0, 2) >= a && +h.slice(0, 2) < b) })).filter((r) => r.horas.length);
+}
+// opciones (Club + Cancha) libres por hora de inicio, unión de todos los Clubes de la localidad
+const porHora = (res: ReturnType<typeof buscar>) => { const m = new Map<string, { club: string; cancha: string }[]>(); for (const r of res) for (const h of r.horas) m.set(h, [...(m.get(h) ?? []), { club: r.club.codigo, cancha: r.cancha }]); return [...m].sort(([x], [y]) => (x < y ? -1 : 1)); };
+const opt = (act: string, attrs: string, html: string) => `<button class="opt" data-act="${act}" ${attrs}><span>${html}</span>${CHEV}</button>`;
+
+function calendario(): string {
+  const dias = Array.from({ length: 15 }, (_, n) => fechaDe(n)), meses = [...new Set(dias.map((f) => f.slice(0, 7)))];
+  return meses.map((m) => {
+    const d0 = fd(m + "-01"), n = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + 1, 0)).getUTCDate();
+    const lead = (d0.getUTCDay() + 6) % 7, ok = (i: number) => { const o = desde(m + "-" + String(i + 1).padStart(2, "0")); return o >= 0 && o <= 14; };
+    const hab = Array.from({ length: n }, (_, i) => i).filter(ok), r0 = Math.floor((hab[0] + lead) / 7), r1 = Math.floor((hab[hab.length - 1] + lead) / 7); // solo las semanas con días habilitados
+    const celdas = Array.from({ length: n }, (_, i) => i).filter((i) => Math.floor((i + lead) / 7) >= r0 && Math.floor((i + lead) / 7) <= r1).map((i) => {
+      const o = desde(m + "-" + String(i + 1).padStart(2, "0"));
+      return ok(i) ? `<button class="d${ui.dia === o ? " on" : ""}" data-act="s-dia" data-v="${o}">${i + 1}${o === 0 ? `<em>HOY</em>` : ""}</button>` : `<span class="d off">${i + 1}</span>`;
+    });
+    return `<h3 class="mes">${MESES[d0.getUTCMonth()][0].toUpperCase() + MESES[d0.getUTCMonth()].slice(1)} ${d0.getUTCFullYear()}</h3><div class="cal7">${"LMMJVSD".split("").map((l) => `<b>${l}</b>`).join("")}${'<span></span>'.repeat(r0 ? 0 : lead)}${celdas.join("")}</div>`;
+  }).join("");
+}
+
+function paso(): string {
+  const f = fechaDe(ui.dia), res = ui.paso >= 2 ? buscar() : [];
+  if (ui.paso === 1) return `<label class="loc">Jugás en ${locSelect("s-loc")}</label>${calendario()}`;
+  if (ui.paso === 2) {
+    const hs = porHora(res);
+    return `<div class="fgrid">${FRANJAS.map(([k, l]) => `<button class="fcard${ui.fr === k ? " on" : ""}" data-act="s-franja" data-v="${k}"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONOS[k]}</svg><b>${k ? l.split(" ")[0] : l}</b><small>${k ? l.split(" ")[1] + " h" : "Sin filtro"}</small></button>`).join("")}</div>
+    <h4>Duración</h4>${durChips()}<h4>Horarios libres</h4>`
+      + (hs.length ? `<div class="times g">${hs.map(([h, o]) => `<button class="slot" data-act="slot" data-fecha="${f}" data-hora="${h}">${h}<small>${o.length} ${o.length === 1 ? "Cancha" : "Canchas"}</small></button>`).join("")}</div>`
+        : `<p class="muted vacio">No hay horarios libres. Probá otra franja u otro día.</p><button class="btn sec full" data-act="s-ir" data-v="1">Cambiar de día</button>`);
+  }
+  const o = opciones();
+  return `<button class="btn go full igual" data-act="s-igual"><b>Me da igual</b><small>Te reservamos ${esc(S.nombreClub(o[0].club))} · ${esc(o[0].cancha)}</small></button>`
+    + [...new Set(o.map((x) => x.club))].map((c) => `<h4>${esc(S.nombreClub(c))}</h4>` + o.filter((x) => x.club === c).map((x) => opt("s-opcion", `data-club="${esc(c)}" data-cancha="${esc(x.cancha)}"`, `<b>${esc(x.cancha)}</b><small>Libre de ${rango(ui.hora, ui.bloques)}</small>`)).join("")).join("");
+}
+const opciones = () => porHora(buscar()).find(([h]) => h === ui.hora)?.[1] ?? [];
+
 function busqueda(): string {
   if (!ui.busca) return "";
-  const f = fechaDe(ui.dia), [, , a, b] = FRANJAS.find((x) => x[0] === ui.fr)!;
-  const res = S.buscar_horarios(loc().provincia, loc().localidad, f, undefined, ui.bloques)
-    .map((r) => ({ ...r, horas: r.horas.filter((h) => +h.slice(0, 2) >= a && +h.slice(0, 2) < b) })).filter((r) => r.horas.length);
-  const clubes = [...new Set(res.map((r) => r.club.codigo))];
-  const lista = clubes.map((c) => `<section class="card"><h3>${esc(S.nombreClub(c))}</h3>${res.filter((r) => r.club.codigo === c).map((r) =>
-    `<div class="cancha"><b>${esc(r.cancha)}</b><div class="times">${r.horas.map((h) => slot(c, r.cancha, f, h)).join("")}</div></div>`).join("")}</section>`).join("")
-    || `<p class="muted vacio">No hay Horarios libres para esa búsqueda. Probá con otro día u horario.</p>`;
-  return `<div class="scrim pscrim" data-act="buscar-scrim"></div><div class="busqueda${ui.anim === "p" ? " in" : ""}"><div class="phead"><button class="x" data-act="buscar-cerrar" aria-label="Cerrar">✕</button><h2>Reservar Cancha</h2></div>
-    <div class="pbody"><h4>Localidad</h4>${locSelect()}
-    <h4>Fecha</h4>${diaTiles("s-dia", ui.dia)}<p class="fechatxt">${fechaLarga(f)}</p>
-    <h4>Horario</h4><div class="franjas">${FRANJAS.map(([k, l]) => chip("s-franja", k, l, ui.fr === k)).join("")}</div>
-    <h4>Duración</h4>${durChips()}
-    <h4>Horarios libres</h4>${lista}</div></div>`;
+  const f = FRANJAS.find((x) => x[0] === ui.fr)!, p = ui.paso;
+  const resumen = [[2, loc().localidad], [2, fechaLarga(fechaDe(ui.dia))], [3, f[0] ? f[1].split(" ")[0] : f[1]], [3, DURS.find((d) => d[0] === ui.bloques)![1]], [3, ui.hora]].filter(([k]) => p >= +k).map(([, t]) => t).join(" · ");
+  return `<div class="scrim pscrim" data-act="buscar-scrim"></div><div class="busqueda${ui.anim === "p" ? " in" : ""}" data-paso="${p}"><div class="phead">
+    <div class="nav">${p > 1 ? `<button class="x" data-act="s-atras" aria-label="Atrás"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>` : ""}<button class="x" data-act="buscar-cerrar" aria-label="Cerrar">✕</button></div>
+    <div class="prog">${[1, 2, 3].map((i) => `<i${i <= p ? ' class="on"' : ""}></i>`).join("")}</div>
+    <h2>${TITULOS[p - 1]}</h2><p class="muted resumen">${esc(resumen) || "&nbsp;"}</p></div>
+    <div class="pbody"><div class="pstep${ui.anim === "f" ? " sf" : ui.anim === "b" ? " sb" : ""}">${paso()}</div></div></div>`;
 }
 
 function clubes(): string {
@@ -113,7 +156,9 @@ function reservas(): string {
 
 function sheet(): string {
   const s = ui.sheet; if (!s) return "";
-  const res = `<dl><dt>Club</dt><dd>${esc(S.nombreClub(s.club))}</dd><dt>Cancha</dt><dd>${esc(s.cancha)}</dd><dt>Fecha</dt><dd>${fechaLarga(s.fecha)}</dd>
+  const libres = s.paso === "confirmar" ? libresEn(s.club, s.fecha, s.hora, s.bloques) : [], // si ya no hay libres (Horario ocupado) queda la elegida
+    canchas = libres.length > 1 ? `<span class="seg-c">${libres.map((c) => chip("sheet-cancha", c, c, c === s.cancha)).join("")}</span>` : esc(s.cancha);
+  const res = `<dl><dt>Club</dt><dd>${esc(S.nombreClub(s.club))}</dd><dt>Cancha</dt><dd>${canchas}</dd><dt>Fecha</dt><dd>${fechaLarga(s.fecha)}</dd>
     <dt>Horario</dt><dd>${rango(s.hora, s.bloques)}</dd><dt>Duración</dt><dd>${DURS.find((d) => d[0] === s.bloques)![1]}</dd></dl>`;
   const e = s.err ? `<p class="err">${esc(s.err)}</p>` : "";
   const cuerpo = s.paso === "confirmar" ? `<h2>Confirmá tu Reserva</h2>${res}${e}<div class="row"><button class="btn sec" data-act="cerrar">Volver</button><button class="btn go" data-act="reservar">Reservar</button></div>`
@@ -143,18 +188,32 @@ function render(): void {
 }
 
 // ---------- acciones (delegación) ----------
+const ir = (n: number, dir: string) => { ui.paso = n; ui.anim = dir; reset = true; }; // cambia de paso (dir "f" adelante / "b" atrás) y vuelve arriba
+const limpiar = () => { ui.hora = ""; ui.tocado = true; }; // cambiar algo anterior borra lo posterior
+const abrirSheet = (club: string, cancha: string, fecha: string, hora: string) => { ui.sheet = { club, cancha, fecha, hora, bloques: ui.bloques, paso: "confirmar", err: "" }; ui.anim = "s"; };
+// "Volver" deja la búsqueda en su paso; "Listo" (Reserva ya hecha) cierra el panel y deja Partidas
+const cerrarSheet = () => { if (ui.sheet?.paso !== "confirmar") ui.busca = false; ui.sheet = null; };
 const ACT: Record<string, (v: string, el: HTMLElement) => void> = {
   tab: (v) => { ui.tab = v; reset = true; for (const k in errs) delete errs[k]; },
   user: (v) => S.setUsuario(v),
-  loc: (v) => { ui.loc = +v; ui.clubSel = ""; ui.tocado = true; },
+  loc: (v) => { ui.loc = +v; ui.clubSel = ""; limpiar(); ui.paso = 1; },
   "buscar-abrir": () => { ui.busca = true; ui.anim = "p"; },
   "buscar-cerrar": () => (ui.busca = false), "buscar-scrim": () => (ui.busca = false),
-  "s-dia": (v) => { ui.dia = +v; ui.tocado = true; }, "s-franja": (v) => { ui.fr = v; ui.tocado = true; },
-  dur: (v) => { ui.bloques = +v; ui.tocado = true; }, cdia: (v) => (ui.clubDia = +v), pdia: (v) => (ui.pDia = +v),
+  "s-atras": () => ir(ui.paso - 1, "b"), "s-ir": (v) => ir(+v, "b"),
+  "s-loc": (v) => { ui.loc = +v; ui.clubSel = ""; limpiar(); }, "s-dia": (v) => { ui.dia = +v; limpiar(); ir(2, "f"); },
+  "s-franja": (v) => { ui.fr = v; limpiar(); }, dur: (v) => { ui.bloques = +v; limpiar(); },
+  "s-opcion": (_, el) => abrirSheet(el.dataset.club!, el.dataset.cancha!, fechaDe(ui.dia), ui.hora),
+  "s-igual": () => { const o = opciones()[0]; abrirSheet(o.club, o.cancha, fechaDe(ui.dia), ui.hora); },
+  "sheet-cancha": (v) => (ui.sheet!.cancha = v), cdia: (v) => (ui.clubDia = +v), pdia: (v) => (ui.pDia = +v),
   club: (v) => { ui.clubSel = v; ui.clubDia = 0; reset = true; },
   atras: () => { ui.clubSel = ""; reset = true; },
-  slot: (_, el) => { const d = el.dataset; ui.sheet = { club: d.club!, cancha: d.cancha!, fecha: d.fecha!, hora: d.hora!, bloques: ui.bloques, paso: "confirmar", err: "" }; ui.anim = "s"; },
-  cerrar: () => (ui.sheet = null), "cerrar-scrim": () => (ui.sheet = null),
+  slot: (_, el) => {
+    const d = el.dataset;
+    if (d.cancha) return abrirSheet(d.club!, d.cancha, d.fecha!, d.hora!); // desde Clubes
+    ui.hora = d.hora!; const o = opciones(); // desde la búsqueda: una sola opción salta el paso 3
+    if (o.length === 1) abrirSheet(o[0].club, o[0].cancha, d.fecha!, d.hora!); else ir(3, "f");
+  },
+  cerrar: () => cerrarSheet(), "cerrar-scrim": () => cerrarSheet(),
   reservar: () => { const s = ui.sheet!; s.err = S.reservar(s.club, s.cancha, s.fecha, s.hora, s.bloques) ?? ""; if (!s.err) s.paso = "hecha"; },
   "abrir-sheet": () => { const s = ui.sheet!; s.err = S.abrir_partida(S.clave(s)) ?? ""; if (!s.err) s.paso = "partida"; },
   abrir: (v) => { errs[v] = S.abrir_partida(v) ?? ""; },

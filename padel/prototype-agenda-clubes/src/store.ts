@@ -35,14 +35,24 @@ export function subscribe(fn: () => void): () => void { listeners.add(fn); retur
 
 export function getReservas(): Reserva[] { return reservas.map((r) => ({ ...r })); }
 export function getReserva(id: number): Reserva | undefined { return reservas.find((r) => r.id === id); }
-export function reservaEn(cancha: number, b: number): Reserva | undefined {
-  return reservas.find((r) => r.cancha === cancha && b >= r.inicio && b < r.fin);
+export function reservaEn(cancha: number, b: number, ignorar?: number): Reserva | undefined {
+  return reservas.find((r) => r.id !== ignorar && r.cancha === cancha && b >= r.inicio && b < r.fin);
 }
-// true si los Bloques lo..hi (inclusive) de la Cancha están todos libres
-export function rangoLibre(cancha: number, lo: number, hi: number): boolean {
+// true si los Bloques lo..hi (inclusive) de la Cancha están todos libres (ignorando la Reserva `ignorar`)
+export function rangoLibre(cancha: number, lo: number, hi: number, ignorar?: number): boolean {
   if (lo < 0 || hi >= BLOQUES) return false;
-  for (let b = lo; b <= hi; b++) if (reservaEn(cancha, b)) return false;
+  for (let b = lo; b <= hi; b++) if (reservaEn(cancha, b, ignorar)) return false;
   return true;
+}
+// Cambia el horario de una Reserva (solo lo usa la variante E). Mensaje de error o null.
+export function editar(id: number, inicio: number, fin: number): string | null {
+  const r = reservas.find((x) => x.id === id);
+  if (!r) return "La Reserva ya no existe.";
+  if (fin - inicio < 2) return "Una Reserva necesita al menos 2 Bloques (1 hora).";
+  if (!rangoLibre(r.cancha, inicio, fin - 1, id)) return "Se pisa con otra Reserva de esa Cancha.";
+  r.inicio = inicio; r.fin = fin;
+  emit();
+  return null;
 }
 // Devuelve un mensaje de error, o null si se creó.
 export function crear(cancha: number, inicio: number, fin: number, titular: string): string | null {

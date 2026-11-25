@@ -40,3 +40,9 @@ Accesibilidad con teclado (B y A son solo mouse), touch real en C, y qué pasa c
 ## Recomendación
 
 conviene un framework liviano (Lit o Preact): para una pantalla con estado efímero de UI (selección, drag, modal, formulario) el TS plano funciona pero obliga a reimplementar a mano foco/scroll/valores de inputs en cada render, y eso solo va a empeorar con más pantallas.
+
+## Variante E — Neón (la elegida)
+
+Verde neón sobre negro y gris oscuro. Clic en un Bloque libre abre el formulario de C (Cancha, duración, inicio, titular); arrastrar abre un menú simple con Inicio y Fin editables con − / +; clic en una Reserva abre el mismo menú para cambiarle el horario o cancelarla. 179 líneas de TS, escrita a mano.
+
+TS plano alcanzó: el único cuidado fue guardar en el estado lo que se escribe (titular) para que sobreviva al re-render de los steppers, y enfocar el input solo al abrir. Probado en Chrome headless por DevTools Protocol: arrastre, clic, steppers, conservación del titular, edición de horario, rechazo por solape y cancelación.

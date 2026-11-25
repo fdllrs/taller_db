@@ -1,8 +1,9 @@
-// PROTOTIPO descartable — ticket 'Agenda visual del Front de Clubes' (fdllrs/taller_db#15). Tres variantes vía ?variant=.
+// PROTOTIPO descartable — ticket 'Agenda visual del Front de Clubes' (fdllrs/taller_db#15). Variantes vía ?variant=.
 import { mount as mountA } from "./variantA.js";
 import { mount as mountB } from "./variantB.js";
 import { mount as mountC } from "./variantC.js";
 import { mount as mountD } from "./variantD.js";
+import { mount as mountE } from "./variantE.js";
 import { getReservas, subscribe } from "./store.js";
 
 const VARIANTS = [
@@ -10,6 +11,7 @@ const VARIANTS = [
   { key: "B", name: "Tablero denso", css: "styles/b.css", mount: mountB },
   { key: "C", name: "Deportivo", css: "styles/c.css", mount: mountC },
   { key: "D", name: "Deportivo simple", css: "styles/d.css", mount: mountD },
+  { key: "E", name: "Neón", css: "styles/e.css", mount: mountE },
 ];
 
 const app = document.getElementById("app")!;

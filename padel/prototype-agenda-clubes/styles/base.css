@@ -1,0 +1,14 @@
+/* Solo chrome del prototipo: switcher y panel de debug. No pertenece a ninguna variante. */
+html, body { margin: 0; }
+.sw-pill {
+  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 1000;
+  display: flex; align-items: center; gap: 4px; padding: 5px;
+  background: #111; color: #fff; border-radius: 999px; box-shadow: 0 6px 24px rgba(0,0,0,.45), 0 0 0 2px #fff;
+  font: 600 14px/1 system-ui, sans-serif;
+}
+.sw-pill button { all: unset; cursor: pointer; width: 32px; height: 32px; text-align: center; line-height: 32px; border-radius: 50%; }
+.sw-pill button:hover { background: #333; }
+.sw-label { min-width: 190px; text-align: center; }
+.dbg { position: fixed; left: 10px; bottom: 14px; z-index: 1000; font: 12px/1.3 ui-monospace, monospace; background: #111; color: #9fe; border-radius: 6px; box-shadow: 0 0 0 2px #fff, 0 4px 16px rgba(0,0,0,.4); max-width: 320px; }
+.dbg summary { cursor: pointer; padding: 6px 10px; color: #fff; }
+.dbg pre { margin: 0; padding: 6px 10px; max-height: 50vh; overflow: auto; }

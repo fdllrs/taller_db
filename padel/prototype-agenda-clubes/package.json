@@ -1,0 +1,14 @@
+{
+  "name": "prototype-agenda-clubes",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "PROTOTIPO descartable: agenda visual del Front de Clubes (3 variantes)",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node serve.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

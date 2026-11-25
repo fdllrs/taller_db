@@ -1,0 +1,56 @@
+/* Variante C — Deportivo: azul cancha, verde pelota, tipografía grande */
+body[data-variant="c"] { background: #e9eff9; color: #0c1b3a; font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: 18px; }
+.c-app { max-width: 1180px; margin: 0 auto; padding-bottom: 110px; }
+.c-hero { background: #1646c8; color: #fff; padding: 28px 28px 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-radius: 0 0 28px 28px; }
+.c-hero h1 { margin: 0; font-size: clamp(34px, 6vw, 60px); font-weight: 800; line-height: .95; letter-spacing: -.03em; }
+.c-hero p { margin: 8px 0 0; font-size: 20px; opacity: .85; }
+
+.c-btn { font: 800 20px "Bricolage Grotesque", sans-serif; min-height: 56px; padding: 0 26px; border: 0; border-radius: 16px; cursor: pointer; }
+.c-go { background: #c8f23a; color: #0c1b3a; }
+.c-go:active, .c-sec:active { transform: translateY(2px); }
+.c-sec { background: #e9eff9; color: #0c1b3a; }
+.c-red { background: #e5383b; color: #fff; }
+.c-new { font-size: 24px; min-height: 64px; box-shadow: 0 5px 0 #8fb01c; }
+
+.c-board { margin: 20px 16px 0; background: #fff; border-radius: 22px; overflow: hidden; box-shadow: 0 4px 0 #c5d2ea; }
+.c-heads, .c-body { display: grid; grid-template-columns: 64px repeat(4, 1fr); }
+.c-heads { position: sticky; top: 0; z-index: 4; background: #0c1b3a; color: #fff; }
+.c-heads div { padding: 14px 6px; text-align: center; font-weight: 800; font-size: 22px; }
+.c-body { position: relative; }
+.c-t { height: 44px; box-sizing: border-box; font-size: 15px; font-weight: 500; color: #5c6e91; text-align: right; padding: 2px 10px 0 0; }
+.c-col { position: relative; border-left: 3px solid #fff; background: #eaf1ff; }
+.c-col:nth-child(even) { background: #dfe9fb; }
+.c-cell { height: 44px; box-sizing: border-box; border-top: 2px solid rgba(255,255,255,.7); cursor: pointer; }
+.c-cell.hr { border-top: 2px solid #fff; }
+.c-cell:hover { background: #c8f23a; }
+.c-res { position: absolute; left: 6px; right: 6px; box-sizing: border-box; background: #1646c8; color: #fff; border: 0; border-radius: 14px; padding: 8px 12px; text-align: left; font: inherit; cursor: pointer; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 3px 0 #0e2f8c; }
+.c-res b { font-size: 20px; font-weight: 800; line-height: 1.1; }
+.c-res span { font-size: 15px; opacity: .85; }
+.c-now { position: absolute; left: 64px; right: 0; height: 0; border-top: 4px solid #e5383b; z-index: 3; pointer-events: none; }
+.c-now span { position: absolute; left: -62px; top: -13px; background: #e5383b; color: #fff; font-size: 13px; font-weight: 800; padding: 2px 8px; border-radius: 8px; }
+
+.c-scrim { position: fixed; inset: 0; background: rgba(12, 27, 58, .65); display: flex; align-items: center; justify-content: center; z-index: 500; padding: 16px; overflow: auto; }
+.c-modal { background: #fff; border-radius: 26px; padding: 26px; width: min(640px, 100%); box-sizing: border-box; max-height: 100%; overflow: auto; }
+.c-modal h2 { margin: 0 0 10px; font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+.c-big { font-size: 24px; font-weight: 500; margin: 0 0 4px; }
+.c-label { font-weight: 800; margin: 18px 0 8px; }
+.c-label small { font-weight: 500; color: #5c6e91; font-size: 15px; }
+.c-pills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.c-pill { min-height: 56px; border-radius: 14px; border: 3px solid #1646c8; background: #fff; color: #1646c8; font: 800 18px "Bricolage Grotesque", sans-serif; cursor: pointer; }
+.c-pill.on { background: #1646c8; color: #fff; }
+.c-step { display: flex; align-items: center; gap: 14px; }
+.c-step button { width: 56px; height: 56px; border-radius: 16px; border: 0; background: #0c1b3a; color: #fff; font-size: 30px; cursor: pointer; }
+.c-step b { font-size: 26px; min-width: 110px; text-align: center; }
+.c-step span { color: #5c6e91; font-size: 15px; }
+.c-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.c-chip { min-height: 48px; border-radius: 12px; border: 0; background: #eef1f6; color: #a2adc2; font: 600 17px "Bricolage Grotesque", sans-serif; text-decoration: line-through; }
+.c-chip.free { background: #c8f23a; color: #0c1b3a; text-decoration: none; font-weight: 800; cursor: pointer; }
+.c-chip.on { background: #0c1b3a; color: #c8f23a; }
+.c-modal input { width: 100%; box-sizing: border-box; height: 58px; border-radius: 14px; border: 3px solid #0c1b3a; padding: 0 16px; font: 500 22px "Bricolage Grotesque", sans-serif; }
+.c-err { color: #c1121f; font-weight: 800; margin: 12px 0 0; }
+.c-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+@media (max-width: 700px) {
+  .c-heads div { font-size: 15px; } .c-heads, .c-body { grid-template-columns: 44px repeat(4, 1fr); }
+  .c-now { left: 44px; } .c-now span { left: -42px; } .c-res b { font-size: 15px; } .c-chips { grid-template-columns: repeat(3, 1fr); }
+}

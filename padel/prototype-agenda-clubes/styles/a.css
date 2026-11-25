@@ -1,0 +1,41 @@
+/* Variante A — Calendario claro */
+body[data-variant="a"] { background: #f6f8fb; color: #1d2733; font-family: "Figtree", system-ui, sans-serif; }
+.a-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 90px; }
+.a-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 18px; gap: 20px; }
+.a-head h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+.a-head p { margin: 2px 0 0; color: #5d6b7a; }
+.a-head .a-hint { font-size: 14px; max-width: 280px; text-align: right; }
+.a-toast { background: #fff4e5; border: 1px solid #f5c98a; color: #7a4a00; padding: 8px 12px; border-radius: 8px; margin: 0 0 12px; }
+
+.a-cal { background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgba(20,40,70,.06), 0 8px 30px rgba(20,40,70,.06); overflow: hidden; min-width: 720px; }
+.a-heads, .a-body { display: grid; grid-template-columns: 64px repeat(4, 1fr); }
+.a-heads { border-bottom: 1px solid #e3e8ef; position: sticky; top: 0; background: #fff; z-index: 3; }
+.a-heads div { padding: 12px 8px; text-align: center; font-weight: 600; }
+.a-gutter .a-hora { box-sizing: border-box; position: relative; }
+.a-hora span { position: absolute; top: -8px; right: 10px; font-size: 12px; color: #8896a6; }
+.a-hora:first-child span { top: 4px; }
+
+.a-col { position: relative; border-left: 1px solid #e3e8ef; user-select: none; }
+.a-slot { height: 30px; box-sizing: border-box; border-top: 1px dashed #edf0f5; cursor: crosshair; }
+.a-slot.hr { border-top: 1px solid #e3e8ef; }
+.a-slot:hover { background: #f0f6ff; }
+.a-slot.sel { background: #cfe3ff; }
+
+.a-res { position: absolute; left: 4px; right: 6px; box-sizing: border-box; padding: 6px 9px; border-radius: 8px; border-left: 4px solid; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; }
+.a-res span { font-size: 12px; opacity: .8; }
+.a-res.on { outline: 2px solid #1d2733; }
+.a-t0 { background: #d9f0ec; border-color: #1c9c8a; color: #0d4a41; }
+.a-t1 { background: #dde8fb; border-color: #3a6fd8; color: #173a7a; }
+.a-t2 { background: #ece0f8; border-color: #8a52c9; color: #46206f; }
+.a-t3 { background: #fbe9cf; border-color: #d98a14; color: #6b4306; }
+.a-draft { position: absolute; left: 4px; right: 6px; box-sizing: border-box; padding: 6px 9px; border-radius: 8px; background: #2d7ff9; color: #fff; font-size: 13px; z-index: 2; }
+
+.a-pop { position: absolute; left: 6px; z-index: 5; width: 230px; box-sizing: border-box; background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 10px 40px rgba(20,40,70,.28); display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.a-pop input { padding: 9px 10px; border: 1px solid #c9d3df; border-radius: 8px; font: inherit; }
+.a-pop input:focus { outline: 2px solid #2d7ff9; border-color: transparent; }
+.a-err { margin: 0; color: #b3261e; font-size: 13px; }
+.a-row { display: flex; justify-content: flex-end; gap: 8px; }
+.a-row button { font: inherit; font-weight: 600; padding: 8px 12px; border-radius: 8px; border: 0; cursor: pointer; }
+.a-main { background: #2d7ff9; color: #fff; }
+.a-ghost { background: transparent; color: #5d6b7a; }
+.a-danger { background: #fde8e6; color: #b3261e; }

@@ -11,8 +11,8 @@ Abrir http://localhost:5174/. Es responsive (corte en 768 px: abajo barra de tab
 
 ## Recorrido para probar
 
-1. Como Martina Ibarra, tab **Buscar** (wizard): Paso 1 elegí Palermo, CABA; Paso 2 un día; Paso 3 una franja (Mañana/Tarde/Noche/Cualquier hora) y duración, y **Ver horarios libres**. Las pastillas de arriba vuelven a cada paso.
-2. Paso 4: tocá un Horario libre: se abre la hoja con Club, Cancha, fecha, inicio–fin y duración.
+1. Como Martina, tab **Partidas** (inicio): arriba el botón **Reservar una Cancha** (el subtítulo resume la búsqueda: "Palermo · Mié 25 nov · Noche · 1 h", o "Elegí dónde y cuándo"). Tocalo: se abre UNA pantalla (panel a pantalla completa en celular, modal en desktop) con Localidad, Fecha (tiles de calendario), Horario (franja), Duración y los **Horarios libres** que se actualizan solos.
+2. Tocá un Horario libre: se abre la hoja con Club, Cancha, fecha ("Miércoles 25 de noviembre"), inicio–fin y duración.
 3. **Reservar** (probá también tocar un Horario ocupado desde otra cuenta para ver los errores en rojo).
 4. En "Reserva confirmada": **Abrir Partida** (o **Listo**, y abrirla después desde **Mis reservas**).
 5. Cambiá a Joaquín Sosa o Lucía Ferreyra en el selector (se queda en la tab actual). En **Partidas** buscá la Partida de Martina y tocá **Unirme**. Probá **Salir**, y mirá que el creador solo ve "Sos el creador".
@@ -22,12 +22,12 @@ Abrir http://localhost:5174/. Es responsive (corte en 768 px: abajo barra de tab
 ## Líneas de TS
 
 - `src/store.ts`: 149 (datos semilla + un stub por Procedimiento)
-- `src/main.ts`: 167 (pantallas, wizard de Buscar, hoja de reserva, chrome, acciones)
-- Total: 316. Más `styles/app.css` (73).
+- `src/main.ts`: 177 (pantallas, panel de búsqueda, hoja de reserva, chrome, acciones)
+- Total: 326. Más `styles/app.css` (103).
 
 ## Cómo se mapeó `hora` en `buscar_horarios`
 
-El paso 3 ofrece franjas (Cualquier hora, Mañana 08–12, Tarde 12–18, Noche 18–24). **No se usa `hora`**: se llama a `buscar_horarios` sin `hora` y el front filtra los inicios devueltos por franja. Motivo: `hora` (±1 h) no expresa un rango; conviene un parámetro de franja (o `hora_desde`/`hora_hasta`) en el back.
+El panel de búsqueda ofrece franjas (Cualquier hora, Mañana 08–12, Tarde 12–18, Noche 18–24). **No se usa `hora`**: se llama a `buscar_horarios` sin `hora` y el front filtra los inicios devueltos por franja. Motivo: `hora` (±1 h) no expresa un rango; conviene un parámetro de franja (o `hora_desde`/`hora_hasta`) en el back.
 
 ## Iteración 2 (feedback del usuario)
 
@@ -36,6 +36,16 @@ El paso 3 ofrece franjas (Cualquier hora, Mañana 08–12, Tarde 12–18, Noche 
 - Acciones nuevas: `w-loc`, `w-dia`, `w-hora`, `w-ver`, `w-paso`, `w-atras` (valor en `data-v`); el contenedor lleva `data-paso`. Tras reservar + "Listo" se queda en el paso 4 refrescado.
 - Se quitó el marco de celular: mobile (< 768 px) a pantalla completa con tabs abajo y hoja desde abajo; desktop (>= 768 px) con barra superior "Pádel", contenido de 720 px máx. y hoja como modal centrado.
 - El selector "Jugando como" es una píldora fija; el debug solo se ve en desktop.
+
+## Iteración 3 (feedback del usuario)
+
+"Unificá la parte de buscar arriba de 'Partidas' como un botón. No me gusta el paso a paso. Hacelo más lindo. La fecha ponela más como una fecha."
+- Se eliminó la tab Buscar y el wizard. Tabs: `partidas` (inicio), `clubes`, `reservas`. Arriba de Partidas hay un botón-tarjeta neón (`buscar-abrir`) que abre el panel `.busqueda`: todo en una pantalla y en vivo (sin botón de enviar). Cierra con la ✕ (`buscar-cerrar`) o tocando fuera en desktop. El estado de búsqueda (`ui.loc/dia/fr/bloques`) persiste al cerrar, cambiar de tab o de cuenta.
+- Acciones nuevas: `buscar-abrir`, `buscar-cerrar`, `s-dia` (`data-v` = offset 0..14), `s-franja` (`data-v` = `""` Cualquier hora, `manana`, `tarde`, `noche`). Se quitaron `w-*`. `loc` y `dur` se comparten con Clubes/Partidas.
+- Fechas como fechas: tile de calendario (SEMANA / número grande / mes, "HOY" en el de hoy) en la búsqueda, en el filtro de Partidas (con tile "Todas") y en Clubes; la fecha elegida se escribe abajo ("Miércoles 25 de noviembre"). Las cards (Partidas, Mis reservas) llevan el tile a la izquierda y "Mié 25 nov" + etiqueta Hoy/Mañana. La hoja muestra la fecha larga.
+- "Más lindo": radios 12/14/16, títulos de sección en mayúscula chica gris, glow neón solo en el botón principal y en el CTA de buscar, animación de entrada de panel y hoja (se apaga con `prefers-reduced-motion`).
+- En celular la ✕ va a la izquierda y el header deja lugar arriba: la píldora "Jugando como" (chrome del prototipo) tapaba el título.
+- Sigue valiendo la nota de franja: se filtra en el cliente, `hora` de `buscar_horarios` no se usa.
 
 ## Lo que pidió la pantalla y no está en los Procedimientos
 
@@ -62,4 +72,4 @@ El paso 3 ofrece franjas (Cualquier hora, Mañana 08–12, Tarde 12–18, Noche 
 
 ## Verificación
 
-Recorrido completo probado en Chrome headless (DevTools Protocol, 390×844 móvil), sin excepciones: reservar desde Buscar, abrir la Partida desde la hoja, cambiar a Joaquín, encontrarla en Partidas, unirse, salir y volver a unirse; llenar la 3/4 (deja de listarse), cancelar una Reserva con confirmación, reservar desde Clubes, y la búsqueda (Horario y duración) se conserva al cambiar de tab.
+Recorrido completo probado en Chrome headless (DevTools Protocol, 390×844 móvil), sin excepciones: reservar desde el panel de búsqueda, abrir la Partida desde la hoja, cambiar a Joaquín, encontrarla en Partidas, unirse, salir y volver a unirse; llenar la 3/4 (deja de listarse), cancelar una Reserva con confirmación, reservar desde Clubes, y la búsqueda (Horario y duración) se conserva al cambiar de tab.
